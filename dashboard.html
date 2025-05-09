@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubbl Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&family=Lora&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-color: #0f2e5c;
+      --secondary-color: #e6f0ff;
+      --background-color: #D6DFF0;
+      --card-color: #e6f0ff;
+      --text-color: #0f2e5c;
+      --light-text: #4a6cfa;
+      --white: #fff;
+      --button-color: #0f2e5c;
+      --nav-bg: #c5d7f2;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: "Poppins", sans-serif;
+      color: var(--text-color);
+      background-color: var(--background-color);
+      line-height: 1.6;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle, white 1px, transparent 1px),
+        radial-gradient(circle, white 1px, transparent 1px),
+        radial-gradient(circle, white 2px, transparent 2px),
+        radial-gradient(circle, white 2px, transparent 2px);
+      background-size: 
+        300px 300px, 
+        250px 250px, 
+        200px 200px, 
+        150px 150px;
+      background-position: 
+        10px 20px, 
+        30px 40px, 
+        50px 60px, 
+        70px 80px;
+    }
+    
+    /* Navigation Bar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--nav-bg);
+      padding: 10px 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .navbar-logo {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .navbar-links {
+      display: flex;
+      gap: 20px;
+    }
+    
+    .navbar-links a {
+      text-decoration: none;
+      color: var(--primary-color);
+      font-weight: 500;
+      font-size: 16px;
+      font-family: "lora", sans-serif;
+    }
+    
+    .navbar-links a.active {
+      font-weight: 700;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    
+    .page-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+      margin-right: 15px;
+    }
+    
+    .logo-text {
+      font-size: 32px;
+      font-weight: 700;
+      color: #193D72;
+    }
+    
+    .card {
+      background-color: var(--card-color);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    h2 {
+      color: var(--primary-color);
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+    
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    
+    .toggle-label {
+      font-weight: 500;
+    }
+    
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 34px;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+    
+    input:checked + .slider {
+      background-color: var(--primary-color);
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(26px);
+    }
+    
+    .setting-item {
+      margin-bottom: 20px;
+    }
+    
+    .setting-item label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    
+    .slider-container {
+      display: flex;
+      align-items: center;
+    }
+    
+    .range-slider {
+      flex: 1;
+      height: 5px;
+      -webkit-appearance: none;
+      background: #ddd;
+      outline: none;
+      border-radius: 5px;
+    }
+    
+    .range-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+    }
+    
+    .slider-value {
+      margin-left: 15px;
+      font-weight: bold;
+      color: var(--primary-color);
+      width: 30px;
+      text-align: center;
+    }
+    
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    
+    .stat-card {
+      background-color: white;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+    
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--primary-color);
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      color: var(--light-text);
+      font-size: 14px;
+    }
+    
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+    }
+    
+    .checkbox-container input[type="checkbox"] {
+      margin-right: 10px;
+      width: 18px;
+      height: 18px;
+      accent-color: var(--primary-color);
+    }
+    
+    /* Dropdown styles */
+    .dropdown {
+      margin-bottom: 20px;
+    }
+    
+    .dropdown-header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 500;
+    }
+    
+    .dropdown-content {
+      background-color: white;
+      border-radius: 0 0 8px 8px;
+      padding: 20px;
+      margin-top: 2px;
+      display: none;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dropdown.open .dropdown-content {
+      display: block;
+    }
+    
+    .dropdown-arrow {
+      transition: transform 0.3s ease;
+    }
+    
+    .dropdown.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-logo">
+      <!--<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#0f2e5c" stroke-width="2"/>
+        <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" fill="#0f2e5c"/>
+        <path d="M12 15L16 9H8L12 15Z" fill="white"/>
+      </svg>-->
+      <img src="Shield.png" alt="Bubbl Logo" class="navbar-logo">
+    </div>
+    <div class="navbar-links">
+      <a href="#">Home</a>
+      <a href="#" class="active">Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1 class="logo-text">Bubbl Dashboard</h1>
+    </div>
+    
+    <div class="dropdown">
+      <div class="dropdown-header">
+        <span>Shield Settings</span>
+        <span class="dropdown-arrow">▼</span>
+      </div>
+      <div class="dropdown-content">
+        <div class="toggle-container">
+          <span class="toggle-label">Activate Bubbl Shield</span>
+          <label class="toggle">
+            <input type="checkbox" id="shield-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label for="sensitivity">Filter Sensitivity</label>
+          <div class="slider-container">
+            <input type="range" id="sensitivity" class="range-slider" min="1" max="10" value="7">
+            <span class="slider-value" id="sensitivity-value">7</span>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label>Filter Categories</label>
+          <div class="checkbox-container">
+            <input type="checkbox" id="hate-speech" checked>
+            <label for="hate-speech">Hate Speech</label>
+          </div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="harassment" checked>
+            <label for="harassment">Harassment</label>
+          </div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="profanity" checked>
+            <label for="profanity">Profanity</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Statistics</h2>
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-value" id="today-count">0</div>
+          <div class="stat-label">Comments Filtered Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="total-count">0</div>
+          <div class="stat-label">Total Comments Filtered</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="sites-count">0</div>
+          <div class="stat-label">Sites Protected</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const shieldToggle = document.getElementById("shield-toggle");
+      const sensitivitySlider = document.getElementById("sensitivity");
+      const sensitivityValue = document.getElementById("sensitivity-value");
+      const hateSpeechCheckbox = document.getElementById("hate-speech");
+      const harassmentCheckbox = document.getElementById("harassment");
+      const profanityCheckbox = document.getElementById("profanity");
+      const todayCountElement = document.getElementById("today-count");
+      const totalCountElement = document.getElementById("total-count");
+      const sitesCountElement = document.getElementById("sites-count");
+      
+      // Dropdown functionality
+      const dropdown = document.querySelector('.dropdown');
+      const dropdownHeader = document.querySelector('.dropdown-header');
+      
+      dropdownHeader.addEventListener('click', () => {
+        dropdown.classList.toggle('open');
+      });
+      
+      // Check URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('activate') === 'true') {
+        shieldToggle.checked = true;
+        saveSettings();
+      }
+      
+      // Load settings
+      chrome.storage.sync.get(["filterSettings", "shieldActive", "filteredCount", "totalFiltered", "sitesProtected"], (data) => {
+        if (data.shieldActive !== undefined) {
+          shieldToggle.checked = data.shieldActive;
+        }
+        
+        if (data.filterSettings) {
+          sensitivitySlider.value = data.filterSettings.sensitivity;
+          sensitivityValue.textContent = data.filterSettings.sensitivity;
+          
+          hateSpeechCheckbox.checked = data.filterSettings.hateSpeech;
+          harassmentCheckbox.checked = data.filterSettings.harassment;
+          profanityCheckbox.checked = data.filterSettings.profanity;
+        }
+        
+        // Update statistics
+        todayCountElement.textContent = data.filteredCount || 0;
+        totalCountElement.textContent = data.totalFiltered || 0;
+        sitesCountElement.textContent = data.sitesProtected || 0;
+      });
+      
+      // Save settings
+      function saveSettings() {
+        const settings = {
+          hateSpeech: hateSpeechCheckbox.checked,
+          harassment: harassmentCheckbox.checked,
+          profanity: profanityCheckbox.checked,
+          sensitivity: parseInt(sensitivitySlider.value)
+        };
+        
+        chrome.storage.sync.set({
+          filterSettings: settings,
+          shieldActive: shieldToggle.checked
+        });
+      }
+      
+      // Event listeners
+      shieldToggle.addEventListener("change", saveSettings);
+      hateSpeechCheckbox.addEventListener("change", saveSettings);
+      harassmentCheckbox.addEventListener("change", saveSettings);
+      profanityCheckbox.addEventListener("change", saveSettings);
+      
+      sensitivitySlider.addEventListener("input", () => {
+        sensitivityValue.textContent = sensitivitySlider.value;
+      });
+      
+      sensitivitySlider.addEventListener("change", saveSettings);
+    });
+  </script>
+</body>
+</html>
