@@ -1,25 +1,24 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // Get the toggle element
-    const bubblToggle = document.getElementById("bubblToggle")
-  
-    // Check if the toggle state is saved in storage
-    chrome.storage.sync.get(["bubblEnabled"], (result) => {
-      if (result.bubblEnabled) {
-        bubblToggle.checked = true
-      }
-    })
-  
-    // Add event listener for toggle changes
+    const bubblToggle = document.getElementById("bubblToggle");
+
+    // Check the toggle state on load
+    chrome.storage.sync.get("shieldActive", (data) => {
+        bubblToggle.checked = data.shieldActive || false;
+    });
+
+    // Toggle change event listener
     bubblToggle.addEventListener("change", function () {
-      // Save the toggle state to storage
-      chrome.storage.sync.set({ bubblEnabled: this.checked }, () => {
-        console.log("Bubbl is " + (bubblToggle.checked ? "enabled" : "disabled"))
-  
-        // Send message to background script to update the extension state
-        chrome.runtime.sendMessage({
-          action: bubblToggle.checked ? "enable" : "disable",
-        })
-      })
-    })
-  })
-  
+        const newStatus = this.checked;
+        chrome.storage.sync.set({ shieldActive: newStatus }, () => {
+            console.log("Bubbl is " + (newStatus ? "enabled" : "disabled"));
+            chrome.runtime.sendMessage({ action: "toggleShield", status: newStatus });
+        });
+    });
+
+    // Listen for toggle updates from other scripts
+    chrome.runtime.onMessage.addListener((request) => {
+        if (request.action === "toggleShield") {
+            bubblToggle.checked = request.status;
+        }
+    });
+});

@@ -18,7 +18,7 @@
     font-weight: 700;
   }
   
-  header {
+  /*header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -52,8 +52,39 @@
   
   nav ul li.active a {
     font-weight: 700;
-  }
+  }*/
   
+  .navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #c5d7f2;
+    padding: 10px 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-logo {
+    width: 40px;
+    height: 40px;
+}
+
+.navbar-links {
+    display: flex;
+    gap: 20px;
+}
+
+.navbar-links a {
+    text-decoration: none;
+    color: #0f2e5c;
+    font-weight: 500;
+    font-size: 16px;
+    font-family: "lora", sans-serif;
+}
+
+.navbar-links a.active {
+    font-weight: 700;
+}
+
   main {
     max-width: 1200px;
     margin: 0 auto;
@@ -81,6 +112,7 @@
   .tagline {
     color: #1a365d;
     font-style: italic;
+    font-size: 1rem;
     
   }
   
@@ -98,13 +130,19 @@
   }
   
   .info-card h2 {
+    margin-bottom: 0.3rem;
+    font-size: 1.7rem;
+  }
+
+  .info-card p {
     margin-bottom: 1rem;
-    font-size: 2rem;
+    font-size: 1rem;
   }
   
   .why-bubbl {
     text-align: center;
     padding: 2rem 0;
+    font-size: 1rem;
   }
   
   .why-bubbl h2 {
@@ -138,6 +176,11 @@
     margin-bottom: 1rem;
     font-size: 1.2rem;
   }
+
+  .reason-card:hover{
+    transform: scale(1.05);
+    transition: transform 0.3s ease-in-out;
+  }
   
   .toggle-container {
     background-color: #1a365d;
@@ -153,6 +196,7 @@
   .toggle-container p {
     max-width: 70%;
     text-align: left;
+    font-size: 1.2rem;
   }
   
   /* Toggle Switch */
