@@ -79,91 +79,98 @@
         </div>
         <div class="stat-card">
           <div class="stat-value" id="total-count">0</div>
-          <div class="stat-label">Total Comments Filtered</div>
+          <div class="stat-label">How much of your browsing was safe today?</div>
         </div>
         <div class="stat-card">
           <div class="stat-value" id="sites-count">0</div>
-          <div class="stat-label">Sites Protected</div>
+          <div class="stat-label">Total Comments Filtered</div>
         </div>
       </div>
     </div>
   </div>
-  <script src="dashboard.js"></script>
- <!-- <script>
+  <!--<script src="dashboard.js"></script>-->
+ <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const shieldToggle = document.getElementById("shield-toggle");
-      const sensitivitySlider = document.getElementById("sensitivity");
-      const sensitivityValue = document.getElementById("sensitivity-value");
-      const hateSpeechCheckbox = document.getElementById("hate-speech");
-      const harassmentCheckbox = document.getElementById("harassment");
-      const profanityCheckbox = document.getElementById("profanity");
-      const todayCountElement = document.getElementById("today-count");
-      const totalCountElement = document.getElementById("total-count");
-      const sitesCountElement = document.getElementById("sites-count");
-      
-      // Dropdown functionality
-      const dropdown = document.querySelector('.dropdown');
-      const dropdownHeader = document.querySelector('.dropdown-header');
-      
-      dropdownHeader.addEventListener('click', () => {
-        dropdown.classList.toggle('open');
-      });
-      
-      // Check URL parameters
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('activate') === 'true') {
-        shieldToggle.checked = true;
-        saveSettings();
-      }
-      
-      // Load settings
-      chrome.storage.sync.get(["filterSettings", "shieldActive", "filteredCount", "totalFiltered", "sitesProtected"], (data) => {
-        if (data.shieldActive !== undefined) {
-          shieldToggle.checked = data.shieldActive;
-        }
-        
+    const shieldToggle = document.getElementById("shield-toggle");
+    const sensitivitySlider = document.getElementById("sensitivity");
+    const sensitivityValue = document.getElementById("sensitivity-value");
+    const hateSpeechCheckbox = document.getElementById("hate-speech");
+    const harassmentCheckbox = document.getElementById("harassment");
+    const profanityCheckbox = document.getElementById("profanity");
+
+     // Dropdown functionality
+     const dropdown = document.querySelector('.dropdown');
+     const dropdownHeader = document.querySelector('.dropdown-header');
+     
+     dropdownHeader.addEventListener('click', () => {
+       dropdown.classList.toggle('open');
+     });
+
+    // Load settings and shield status
+    chrome.storage.sync.get(["filterSettings", "shieldActive"], (data) => {
+        shieldToggle.checked = data.shieldActive || false;
+
         if (data.filterSettings) {
-          sensitivitySlider.value = data.filterSettings.sensitivity;
-          sensitivityValue.textContent = data.filterSettings.sensitivity;
-          
-          hateSpeechCheckbox.checked = data.filterSettings.hateSpeech;
-          harassmentCheckbox.checked = data.filterSettings.harassment;
-          profanityCheckbox.checked = data.filterSettings.profanity;
+            sensitivitySlider.value = data.filterSettings.sensitivity;
+            sensitivityValue.textContent = data.filterSettings.sensitivity;
+            hateSpeechCheckbox.checked = data.filterSettings.hateSpeech;
+            harassmentCheckbox.checked = data.filterSettings.harassment;
+            profanityCheckbox.checked = data.filterSettings.profanity;
         }
-        
-        // Update statistics
-        todayCountElement.textContent = data.filteredCount || 0;
-        totalCountElement.textContent = data.totalFiltered || 0;
-        sitesCountElement.textContent = data.sitesProtected || 0;
-      });
-      
-      // Save settings
-      function saveSettings() {
-        const settings = {
-          hateSpeech: hateSpeechCheckbox.checked,
-          harassment: harassmentCheckbox.checked,
-          profanity: profanityCheckbox.checked,
-          sensitivity: parseInt(sensitivitySlider.value)
-        };
-        
-        chrome.storage.sync.set({
-          filterSettings: settings,
-          shieldActive: shieldToggle.checked
-        });
-      }
-      
-      // Event listeners
-      shieldToggle.addEventListener("change", saveSettings);
-      hateSpeechCheckbox.addEventListener("change", saveSettings);
-      harassmentCheckbox.addEventListener("change", saveSettings);
-      profanityCheckbox.addEventListener("change", saveSettings);
-      
-      sensitivitySlider.addEventListener("input", () => {
-        sensitivityValue.textContent = sensitivitySlider.value;
-      });
-      
-      sensitivitySlider.addEventListener("change", saveSettings);
     });
-  </script>-->
+
+    // Toggle change event listener
+    shieldToggle.addEventListener("change", function () {
+        const newStatus = this.checked;
+        chrome.storage.sync.set({ shieldActive: newStatus }, () => {
+            console.log("Shield is " + (newStatus ? "enabled" : "disabled"));
+            chrome.runtime.sendMessage({ action: "toggleShield", status: newStatus });
+        });
+    });
+
+    // Listen for toggle updates from other scripts
+    chrome.runtime.onMessage.addListener((request) => {
+        if (request.action === "toggleShield") {
+            shieldToggle.checked = request.status;
+        }
+    });
+
+    // Save settings
+    function saveSettings() {
+        const settings = {
+            hateSpeech: hateSpeechCheckbox.checked,
+            harassment: harassmentCheckbox.checked,
+            profanity: profanityCheckbox.checked,
+            sensitivity: parseInt(sensitivitySlider.value)
+        };
+        chrome.storage.sync.set({ filterSettings: settings });
+    }
+
+    // Event listeners for settings
+    hateSpeechCheckbox.addEventListener("change", saveSettings);
+    harassmentCheckbox.addEventListener("change", saveSettings);
+    profanityCheckbox.addEventListener("change", saveSettings);
+    sensitivitySlider.addEventListener("change", saveSettings);
+
+    sensitivitySlider.addEventListener("input", () => {
+        sensitivityValue.textContent = sensitivitySlider.value;
+    });
+});
+
+    // Simulate statistics update
+    function updateStatistics() {
+        const todayCount = Math.floor(Math.random() * 100);
+        const totalCount = Math.floor(Math.random() * 1000);
+        const sitesCount = Math.floor(Math.random() * 50);
+
+        document.getElementById("today-count").textContent = todayCount;
+        document.getElementById("total-count").textContent = totalCount;
+        document.getElementById("sites-count").textContent = sitesCount;
+    }
+
+    // Update statistics every 5 seconds
+    setInterval(updateStatistics, 5000);
+    updateStatistics();
+  </script>
 </body>
 </html>

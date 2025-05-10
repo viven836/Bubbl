@@ -3,7 +3,7 @@
   "name": "Bubbl",
   "version": "1.0",
   "description": "Shield yourself from toxic comments and hate speech",
-  "permissions": ["storage", "contextMenus", "activeTab"],
+  "permissions": ["storage", "contextMenus", "activeTab", "alarms"],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
@@ -26,12 +26,6 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "run_at": "document_idle"
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "resources": ["libs/tf.min.js", "libs/toxicity.js"],
-      "matches": ["<all_urls>"]
     }
   ]
 }
