@@ -1,208 +1,330 @@
-// This script runs on web pages to detect and hide hate comments
+/*
+let model;
+let isModelLoaded = false;
+let isShieldEnabled = false;
+let hateSpeechEnabled = false;
+let profanityEnabled = false;
+let sensitivity = 50; // 0–100
 
-// Configuration
-let filterSettings = {
-    hateSpeech: true,
-    harassment: true,
-    profanity: true,
-    sensitivity: 7,
+const TOXICITY_THRESHOLD = () => (sensitivity / 100) * 0.4 + 0.5; // => 0.5 to 0.9
+
+// Load local JS scripts
+function loadLocalScript(filePath) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = chrome.runtime.getURL(filePath);
+    script.type = "text/javascript";
+    script.async = false;
+    script.onload = () => resolve();
+    script.onerror = () => reject(`Failed to load script: ${filePath}`);
+    document.head.appendChild(script);
+  });
+}
+
+// Load and initialize the toxicity model
+async function loadToxicityModel() {
+  if (isModelLoaded) return;
+
+  try {
+    console.log("[AI Shield] ⬇️ Loading local TensorFlow and Toxicity model...");
+
+    await loadLocalScript("libs/tf.min.js");
+    await loadLocalScript("libs/toxicity.js");
+
+    // Console spinner animation
+    const spinnerFrames = ["⏳", "🕐", "🕑", "🕒", "🕓", "🕔"];
+    let frameIndex = 0;
+    const spinnerInterval = setInterval(() => {
+      console.log(`[AI Shield] ${spinnerFrames[frameIndex++ % spinnerFrames.length]} Initializing toxicity model...`);
+    }, 500);
+
+    // Wait until toxicity is available
+    await new Promise((resolve, reject) => {
+      const timeout = 5000;
+      const interval = 100;
+      let waited = 0;
+
+      const check = () => {
+        if (window.toxicity) return resolve();
+        waited += interval;
+        if (waited >= timeout) return reject("Toxicity model failed to load.");
+        setTimeout(check, interval);
+      };
+      check();
+    });
+
+    model = await toxicity.load(TOXICITY_THRESHOLD());
+    isModelLoaded = true;
+    clearInterval(spinnerInterval);
+    console.log("[AI Shield] ✅ Toxicity model loaded successfully!");
+  } catch (err) {
+    console.error("[AI Shield] ❌ Error loading model:", err);
   }
-  
-  // Track filtered comments count
-  let filteredCount = 0
-  
-  // Load settings from Chrome storage
-  if (typeof chrome !== "undefined" && typeof chrome.storage !== "undefined") {
-    chrome.storage.sync.get(["filterSettings", "shieldActive", "filteredCount"], (data) => {
-      if (data.filterSettings) {
-        filterSettings = data.filterSettings
-      }
-  
-      // Check if shield is active
-      const isActive = data.shieldActive !== undefined ? data.shieldActive : true
-  
-      // Get previously filtered count
-      if (data.filteredCount) {
-        filteredCount = data.filteredCount
-      }
-  
-      // Only start filtering if shield is active
-      if (isActive) {
-        startFiltering()
-      }
-    })
-  
-    // Listen for settings changes
-    chrome.storage.onChanged.addListener((changes, namespace) => {
-      if (namespace === "sync") {
-        if (changes.filterSettings) {
-          filterSettings = changes.filterSettings.newValue
-        }
-  
-        if (changes.shieldActive) {
-          const isActive = changes.shieldActive.newValue
-  
-          if (isActive) {
-            startFiltering()
-          } else {
-            // Could implement a way to restore hidden comments here
-            console.log("Bubbl shield deactivated")
-          }
-        }
-      }
-    })
-  } else {
-    console.warn("Chrome storage API is not available. Filter settings will not be loaded or saved.")
+}
+
+// Evaluate and hide toxic comments
+async function processComment(node) {
+  const text = node.innerText;
+  if (!text || text.trim() === "") return;
+
+  if (!isModelLoaded) await loadToxicityModel();
+
+  model.classify([text]).then((predictions) => {
+    let toxicScore = 0;
+    predictions.forEach((p) => {
+      if (p.results[0].match) toxicScore++;
+    });
+
+    if (toxicScore > 0 && isShieldEnabled) {
+      node.style.display = "none";
+      console.log(`[AI Shield] 🚫 Hiding toxic comment: "${text.slice(0, 60)}..."`);
+    }
+  });
+}
+
+// Scan all comment-like nodes on the page
+function scanAndProcessComments() {
+  const nodes = document.querySelectorAll("p, span, div, li");
+  nodes.forEach((node) => {
+    if (!node.hasAttribute("data-checked")) {
+      node.setAttribute("data-checked", "true");
+      processComment(node);
+    }
+  });
+}
+
+// Settings from storage
+chrome.storage.local.get(["isShieldEnabled", "hateSpeechEnabled", "profanityEnabled", "sensitivity"], (data) => {
+  isShieldEnabled = data.isShieldEnabled ?? true;
+  hateSpeechEnabled = data.hateSpeechEnabled ?? true;
+  profanityEnabled = data.profanityEnabled ?? true;
+  sensitivity = data.sensitivity ?? 50;
+
+  if (isShieldEnabled) {
+    loadToxicityModel().then(() => {
+      scanAndProcessComments();
+      setInterval(scanAndProcessComments, 2000);
+    });
   }
-  
-  function startFiltering() {
-    // Common selectors for comments across popular platforms
-    const commentSelectors = [
-      // YouTube
-      ".ytd-comment-renderer",
-      // Facebook
-      ".userContentWrapper",
-      // Twitter
-      ".tweet-text",
-      // Reddit
-      ".Comment",
-      // Instagram
-      ".C4VMK",
-      // General
-      ".comment",
-      ".comments",
-      ".comment-body",
-    ]
-  
-    // Simple hate speech detection (would be more sophisticated in a real extension)
-    const hatePatterns = [
-      /\b(hate|hating)\b/i,
-      /\b(stupid|idiot|dumb)\b/i,
-      /\b(ugly|fat|disgusting)\b/i,
-      /\b(kill|die|death)\b/i,
-      /\b(racist|sexist)\b/i,
-    ]
-  
-    // Find all comments on the page
-    let comments = []
-    commentSelectors.forEach((selector) => {
-      const elements = document.querySelectorAll(selector)
-      if (elements.length > 0) {
-        comments = [...comments, ...elements]
+});
+
+// Real-time update listener
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.isShieldEnabled) isShieldEnabled = changes.isShieldEnabled.newValue;
+  if (changes.hateSpeechEnabled) hateSpeechEnabled = changes.hateSpeechEnabled.newValue;
+  if (changes.profanityEnabled) profanityEnabled = changes.profanityEnabled.newValue;
+  if (changes.sensitivity) sensitivity = changes.sensitivity.newValue;
+});
+*/
+
+// content.js — Bubbl Extension: Filters toxic comments using TensorFlow.js Toxicity model
+
+let model;
+let isModelLoaded = false;
+let isShieldEnabled = true;
+let hateSpeechEnabled = true;
+let profanityEnabled = true;
+let sensitivity = 50; // Default slider value (maps to 0.5)
+
+const TOXICITY_THRESHOLD = () => sensitivity / 100 * 0.4 + 0.5; // maps 0–100 => 0.5–0.9
+
+// Load local JS scripts for TensorFlow and Toxicity model
+function loadLocalScript(filePath) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = chrome.runtime.getURL(filePath);
+        script.type = "text/javascript";
+        script.async = false;
+        script.onload = () => {
+            console.log(`[AI Shield] ✅ Loaded script: ${filePath}`);
+            resolve();
+        };
+        script.onerror = () => {
+            console.error(`[AI Shield] ❌ Failed to load script: ${filePath}`);
+            reject(`Failed to load script: ${filePath}`);
+        };
+        document.head.appendChild(script);
+    });
+}
+
+// Load the model from local scripts
+/*async function loadToxicityModel() {
+    if (isModelLoaded) return;
+
+    try {
+        console.log("[AI Shield] ⬇️ Loading local scripts...");
+
+        await loadLocalScript("libs/tf.min.js");
+        await loadLocalScript("libs/toxicity.js");
+
+        console.log("[AI Shield] 🧠 Waiting for the toxicity model to initialize...");
+
+        // Wait until `toxicity` is available globally
+        await new Promise((resolve, reject) => {
+            const maxWait = 5000; // 5 seconds timeout
+            const interval = 100;
+            let waited = 0;
+
+            const checkToxicity = () => {
+                if (window.toxicity) return resolve();
+                waited += interval;
+                if (waited >= maxWait) return reject("toxicity not defined after timeout");
+                setTimeout(checkToxicity, interval);
+            };
+
+            checkToxicity();
+        });
+
+        // Load the model
+        window.toxicity.load(TOXICITY_THRESHOLD()).then(loadedModel => {
+            model = loadedModel;
+            isModelLoaded = true;
+            console.log("[AI Shield] ✅ Toxicity model loaded successfully!");
+        });
+    } catch (error) {
+        console.error("[AI Shield] ❌ Failed to load scripts or model:", error);
+    }
+}*/
+
+async function loadToxicityModel() {
+    if (isModelLoaded) return;
+
+    try {
+        console.log("[AI Shield] ⬇️ Loading local scripts...");
+
+        await loadLocalScript("libs/tf.min.js");
+        await loadLocalScript("libs/toxicity.js");
+        console.log("[AI Shield] 🧠 Waiting for the toxicity model to initialize...");
+
+        if (!window.toxicity || !window.tf) {
+        throw new Error("Toxicity or TensorFlow not available after loading."); 
       }
-    })
-  
-    // Process each comment
-    comments.forEach((comment) => {
-      const commentText = comment.textContent.toLowerCase()
-      let hateScore = 0
-  
-      // Check for hate patterns
-      if (filterSettings.hateSpeech) {
-        hatePatterns.forEach((pattern) => {
-          if (pattern.test(commentText)) {
-            hateScore += 2
-          }
-        })
-      }
-  
-      // Simple profanity check
-      if (filterSettings.profanity) {
-        const profanityList = ["fuck", "shit", "ass", "bitch", "damn"]
-        profanityList.forEach((word) => {
-          if (commentText.includes(word)) {
-            hateScore += 1
-          }
-        })
-      }
-  
-      // Adjust score based on sensitivity
-      const threshold = 11 - filterSettings.sensitivity
-  
-      // Hide comment if score exceeds threshold
-      if (hateScore >= threshold) {
-        // Increment filtered count
-        filteredCount++
-  
-        // Update storage and badge
-        if (typeof chrome !== "undefined" && typeof chrome.storage !== "undefined") {
-          chrome.storage.sync.set({ filteredCount: filteredCount })
-          chrome.runtime.sendMessage({
-            action: "updateFilteredCount",
-            count: filteredCount,
-          })
+
+        // ✅ Wait for global `toxicity` to be defined
+        let retries = 10;
+        while (!window.toxicity && retries > 0) {
+            console.log("[AI Shield] ⏳ Waiting for toxicity model to become available...");
+            await new Promise(r => setTimeout(r, 500));
+            retries--;
         }
-  
-        // Store original content
-        const originalContent = comment.innerHTML
-  
-        // Replace with filtered message
-        comment.innerHTML = `
-          <div class="bubbl-shield-message" style="
-            padding: 10px;
-            background-color: #e6f0ff;
-            border-radius: 5px;
-            color: #0f2e5c;
-            font-style: italic;
-            text-align: center;
-            font-family: 'Poppins', sans-serif;
-          ">
-            <span>🛡️ Potentially harmful comment hidden by Bubbl</span>
-            <button class="show-comment-btn" style="
-              background: none;
-              border: none;
-              color: #4a6cfa;
-              text-decoration: underline;
-              cursor: pointer;
-              font-size: 12px;
-              margin-left: 10px;
-            ">Show anyway</button>
-          </div>
-        `
-  
-        // Add event listener to show button
-        const showBtn = comment.querySelector(".show-comment-btn")
-        if (showBtn) {
-          showBtn.addEventListener("click", () => {
-            comment.innerHTML = originalContent
-          })
+
+        if (!window.toxicity) {
+            throw new Error("toxicity model failed to load after retries");
         }
-      }
-    })
-  
-    // Set up a mutation observer to catch dynamically loaded comments
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes && mutation.addedNodes.length > 0) {
-          // Check if any new comments were added
-          let newComments = []
-          commentSelectors.forEach((selector) => {
-            mutation.addedNodes.forEach((node) => {
-              if (node.nodeType === 1) {
-                // Element node
-                if (node.matches && node.matches(selector)) {
-                  newComments.push(node)
-                }
-                const childComments = node.querySelectorAll(selector)
-                if (childComments.length > 0) {
-                  newComments = [...newComments, ...childComments]
-                }
-              }
-            })
-          })
-  
-          // Process new comments
-          if (newComments.length > 0) {
-            startFiltering()
-          }
+
+        model = await window.toxicity.load(TOXICITY_THRESHOLD());
+        isModelLoaded = true;
+        console.log("[AI Shield] ✅ Toxicity model loaded successfully!");
+
+    } catch (error) {
+        console.error("[AI Shield] ❌ Failed to load scripts or model:", error);
+    }
+}
+
+
+// Remove toxic comments using the AI model
+/*async function processComment(commentNode) {
+    const text = commentNode.innerText;
+    if (!text || text.trim() === "") return;
+
+    if (!isModelLoaded) {
+        console.warn("[AI Shield] ❌ Model is not loaded yet.");
+        return;
+    }
+
+    model.classify([text]).then(predictions => {
+        let toxicScore = 0;
+        predictions.forEach(pred => {
+            if (pred.results[0].match) {
+                toxicScore++;
+            }
+        });
+
+        if (toxicScore > 0 && isShieldEnabled) {
+            commentNode.style.display = 'none';
+            console.log(`[AI Shield] 🚫 Hidden toxic comment: "${text}"`);
         }
-      })
-    })
-  
-    // Start observing the document
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    })
-  }
-  
+    });
+}*/
+
+async function processComment(commentNode) {
+    const text = commentNode.innerText;
+    if (!text || text.trim() === "") return;
+
+    if (!isModelLoaded || !model || typeof model.classify !== 'function') {
+        console.warn("[AI Shield] ⚠️ Model not ready yet.");
+        return;
+    }
+
+    try {
+        const predictions = await model.classify([text]);
+        let toxicScore = 0;
+
+        predictions.forEach(pred => {
+            if (pred.results[0].match) {
+                toxicScore++;
+            }
+        });
+
+        if (toxicScore > 0 && isShieldEnabled) {
+            commentNode.style.display = 'none';
+            console.log(`[AI Shield] 🚫 Hidden toxic comment: "${text}"`);
+        }
+
+    } catch (err) {
+        console.error("[AI Shield] ❌ Error during classification:", err);
+    }
+}
+
+
+// Scan and process comments using AI
+/*function scanAndProcessComments() {
+    const commentNodes = document.querySelectorAll("p, span, div, li");
+    commentNodes.forEach(node => {
+        if (!node.getAttribute("data-checked")) {
+            node.setAttribute("data-checked", "true");
+            processComment(node);
+        }
+    });
+}*/
+
+function scanAndProcessComments() {
+    if (!isModelLoaded || !model) return;
+
+    const commentNodes = document.querySelectorAll("p, span, div, li");
+    commentNodes.forEach(node => {
+        if (!node.getAttribute("data-checked")) {
+            node.setAttribute("data-checked", "true");
+            processComment(node);
+        }
+    });
+}
+
+
+// Listen for setting changes from popup
+chrome.storage.local.get([
+    "isShieldEnabled",
+    "hateSpeechEnabled",
+    "profanityEnabled",
+    "sensitivity"
+], (data) => {
+    isShieldEnabled = data.isShieldEnabled ?? true;
+    hateSpeechEnabled = data.hateSpeechEnabled ?? true;
+    profanityEnabled = data.profanityEnabled ?? true;
+    sensitivity = data.sensitivity ?? 50;
+
+    if (isShieldEnabled) {
+        loadToxicityModel().then(() => {
+            scanAndProcessComments();
+            setInterval(scanAndProcessComments, 2000); // Auto-scan every 2s
+        });
+    }
+});
+
+// Real-time updates from dashboard
+chrome.storage.onChanged.addListener((changes) => {
+    if (changes.isShieldEnabled) isShieldEnabled = changes.isShieldEnabled.newValue;
+    if (changes.hateSpeechEnabled) hateSpeechEnabled = changes.hateSpeechEnabled.newValue;
+    if (changes.profanityEnabled) profanityEnabled = changes.profanityEnabled.newValue;
+    if (changes.sensitivity) sensitivity = changes.sensitivity.newValue;
+});

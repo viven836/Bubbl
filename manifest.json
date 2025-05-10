@@ -1,31 +1,37 @@
 {
-    "manifest_version": 3,
-    "name": "Bubbl",
-    "version": "1.0",
-    "description": "Shield yourself from toxic comments and hate speech",
-    "permissions": ["storage", "contextMenus", "activeTab"],
-    "action": {
-      "default_popup": "popup.html",
-      "default_icon": {
-        "16": "Shield.png",
-        "48": "Shield.png",
-        "128": "Shield.png"
-      }
-    },
-    "icons": {
+  "manifest_version": 3,
+  "name": "Bubbl",
+  "version": "1.0",
+  "description": "Shield yourself from toxic comments and hate speech",
+  "permissions": ["storage", "contextMenus", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
       "16": "Shield.png",
-        "48": "Shield.png",
-        "128": "Shield.png"
-    },
-    "content_scripts": [
-      {
-        "matches": ["<all_urls>"],
-        "js": ["content.js"],
-        "run_at": "document_idle"
-      }
-    ],
-    "background": {
-      "service_worker": "background.js"
+      "48": "Shield.png",
+      "128": "Shield.png"
     }
-  }
-  
+  },
+  "icons": {
+    "16": "Shield.png",
+    "48": "Shield.png",
+    "128": "Shield.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["libs/tf.min.js", "libs/toxicity.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
