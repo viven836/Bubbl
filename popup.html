@@ -1,3 +1,4 @@
+<!--
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +12,7 @@
   <div class="app-container">
     
     
-    <!-- Active State Card -->
+    
     <div class="card active-card" id="active-card" >
       <div class="logo">
         <div class="logo-icon">
@@ -22,18 +23,69 @@
       
       <div class="status-text">
         <p class="status active">Bubbl is active <span class="shield-icon">🛡️</span></p>
-        <p class="filtered-count"><span id="filtered-count">3</span> toxic comments filtered today</p>
+        <p class="filtered-count"><span id="filtered-count">0</span> toxic comments filtered today</p>
+      </div>
+      
+      <button class="primary-btn">View Dashboard</button>
+    </div>
+    
+    
+    <div class="card inactive-card" id="inactive-card" >
+      <div class="logo">
+        <div class="logo-icon">
+            <img src="Shield.png" alt="Bubbl Logo" class="logo-icon">
+        </div>
+        <div class="logo-text">Bubbl</div>
+      </div>
+      
+      <div class="status-text">
+        <p class="status inactive">Bubbl is not active <span class="shield-icon">🛡️</span></p>
+        <p class="message">Turn on the shield. Stay kind. Stay protected.</p>
+      </div>
+      
+      <button class="primary-btn">Go to Bubbl</button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubbl</title>
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&family=Lora&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <div class="background">
+      <!-- Stars and sparkles will be added via CSS -->
+    </div>
+    
+    <!-- Active State Card -->
+    <div class="card active-card" id="active-card">
+      <div class="logo">
+        <div class="logo-icon">B</div>
+        <div class="logo-text">Bubbl</div>
+      </div>
+      
+      <div class="status-text">
+        <p class="status active">Bubbl is active <span class="shield-icon">🛡️</span></p>
+        <p class="filtered-count"><span id="filtered-count">0</span> toxic comments filtered today</p>
       </div>
       
       <button class="primary-btn">View Dashboard</button>
     </div>
     
     <!-- Inactive State Card -->
-    <div class="card inactive-card" id="inactive-card" >
+    <div class="card inactive-card" id="inactive-card" style="display: none;">
       <div class="logo">
-        <div class="logo-icon">
-            <img src="Shield.png" alt="Bubbl Logo" class="logo-icon">
-        </div>
+        <div class="logo-icon">B</div>
         <div class="logo-text">Bubbl</div>
       </div>
       

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!--<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,14 +9,10 @@
   
 </head>
 <body>
-  <!-- Navigation Bar -->
+ 
   <nav class="navbar">
     <div class="navbar-logo">
-      <!--<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#0f2e5c" stroke-width="2"/>
-        <path d="M12 18C15.3137 18 18 15.3137 18 12C18 8.68629 15.3137 6 12 6C8.68629 6 6 8.68629 6 12C6 15.3137 8.68629 18 12 18Z" fill="#0f2e5c"/>
-        <path d="M12 15L16 9H8L12 15Z" fill="white"/>
-      </svg>-->
+    
       <img src="Shield.png" alt="Bubbl Logo" class="navbar-logo">
     </div>
     <div class="navbar-links">
@@ -88,89 +84,95 @@
       </div>
     </div>
   </div>
-  <!--<script src="dashboard.js"></script>-->
- <script>
-    document.addEventListener("DOMContentLoaded", () => {
-    const shieldToggle = document.getElementById("shield-toggle");
-    const sensitivitySlider = document.getElementById("sensitivity");
-    const sensitivityValue = document.getElementById("sensitivity-value");
-    const hateSpeechCheckbox = document.getElementById("hate-speech");
-    const harassmentCheckbox = document.getElementById("harassment");
-    const profanityCheckbox = document.getElementById("profanity");
+  <script src="dashboard.js"></script>
+ 
+</body>
+</html>-->
 
-     // Dropdown functionality
-     const dropdown = document.querySelector('.dropdown');
-     const dropdownHeader = document.querySelector('.dropdown-header');
-     
-     dropdownHeader.addEventListener('click', () => {
-       dropdown.classList.toggle('open');
-     });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="dashboard.css">
+  <title>Bubbl Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&family=Lora&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="navbar-logo">
+      <img src="Shield.png" alt="Bubbl Logo" class="navbar-logo">
+    </div>
+    <div class="navbar-links">
+      <a href="home.html">Home</a>
+      <a href="#" class="active">Dashboard</a>
+    </div>
+  </nav>
 
-    // Load settings and shield status
-    chrome.storage.sync.get(["filterSettings", "shieldActive"], (data) => {
-        shieldToggle.checked = data.shieldActive || false;
-
-        if (data.filterSettings) {
-            sensitivitySlider.value = data.filterSettings.sensitivity;
-            sensitivityValue.textContent = data.filterSettings.sensitivity;
-            hateSpeechCheckbox.checked = data.filterSettings.hateSpeech;
-            harassmentCheckbox.checked = data.filterSettings.harassment;
-            profanityCheckbox.checked = data.filterSettings.profanity;
-        }
-    });
-
-    // Toggle change event listener
-    shieldToggle.addEventListener("change", function () {
-        const newStatus = this.checked;
-        chrome.storage.sync.set({ shieldActive: newStatus }, () => {
-            console.log("Shield is " + (newStatus ? "enabled" : "disabled"));
-            chrome.runtime.sendMessage({ action: "toggleShield", status: newStatus });
-        });
-    });
-
-    // Listen for toggle updates from other scripts
-    chrome.runtime.onMessage.addListener((request) => {
-        if (request.action === "toggleShield") {
-            shieldToggle.checked = request.status;
-        }
-    });
-
-    // Save settings
-    function saveSettings() {
-        const settings = {
-            hateSpeech: hateSpeechCheckbox.checked,
-            harassment: harassmentCheckbox.checked,
-            profanity: profanityCheckbox.checked,
-            sensitivity: parseInt(sensitivitySlider.value)
-        };
-        chrome.storage.sync.set({ filterSettings: settings });
-    }
-
-    // Event listeners for settings
-    hateSpeechCheckbox.addEventListener("change", saveSettings);
-    harassmentCheckbox.addEventListener("change", saveSettings);
-    profanityCheckbox.addEventListener("change", saveSettings);
-    sensitivitySlider.addEventListener("change", saveSettings);
-
-    sensitivitySlider.addEventListener("input", () => {
-        sensitivityValue.textContent = sensitivitySlider.value;
-    });
-});
-
-    // Simulate statistics update
-    function updateStatistics() {
-        const todayCount = Math.floor(Math.random() * 100);
-        const totalCount = Math.floor(Math.random() * 1000);
-        const sitesCount = Math.floor(Math.random() * 50);
-
-        document.getElementById("today-count").textContent = todayCount;
-        document.getElementById("total-count").textContent = totalCount;
-        document.getElementById("sites-count").textContent = sitesCount;
-    }
-
-    // Update statistics every 5 seconds
-    setInterval(updateStatistics, 5000);
-    updateStatistics();
-  </script>
+  <div class="container">
+    <div class="page-header">
+      <h1 class="logo-text">Bubbl Dashboard</h1>
+    </div>
+    
+    <div class="dropdown">
+      <div class="dropdown-header">
+        <span>Shield Settings</span>
+        <span class="dropdown-arrow">▼</span>
+      </div>
+      <div class="dropdown-content">
+        <div class="toggle-container">
+          <span class="toggle-label">Activate Bubbl Shield</span>
+          <label class="toggle">
+            <input type="checkbox" id="shield-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label for="sensitivity">Filter Sensitivity</label>
+          <div class="slider-container">
+            <input type="range" id="sensitivity" class="range-slider" min="1" max="10" value="7">
+            <span class="slider-value" id="sensitivity-value">7</span>
+          </div>
+        </div>
+        
+        <div class="setting-item">
+          <label>Filter Categories</label>
+          <div class="checkbox-container">
+            <input type="checkbox" id="hate-speech" checked>
+            <label for="hate-speech">Hate Speech</label>
+          </div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="harassment" checked>
+            <label for="harassment">Harassment</label>
+          </div>
+          <div class="checkbox-container">
+            <input type="checkbox" id="profanity" checked>
+            <label for="profanity">Profanity</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <h2>Statistics</h2>
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-value" id="today-count">0</div>
+          <div class="stat-label">Comments Filtered Today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="total-count">0</div>
+          <div class="stat-label">How much of your browsing was safe today?</div>
+        </div>
+        <!---<div class="stat-card">
+          <div class="stat-value" id="sites-count">0</div>
+          <div class="stat-label">Total Comments Filtered</div>
+        </div>
+      </div>
+    </div>-->
+  </div>
+  <script src="dashboard.js"></script>
 </body>
 </html>

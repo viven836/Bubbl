@@ -1,72 +1,6 @@
-/*// Initialize default settings when extension is installed
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.sync.set({
-      filterSettings: {
-        hateSpeech: true,
-        harassment: true,
-        profanity: true,
-        sensitivity: 7,
-      },
-      shieldActive: true,
-      filteredCount: 0,
-    })
-  
-    // Create context menu for quick filtering
-    chrome.contextMenus.create({
-      id: "filterComment",
-      title: "Filter this comment with Bubbl",
-      contexts: ["selection"],
-    })
-  })
-  
-  // Handle context menu clicks
-  chrome.contextMenus.onClicked.addListener((info, tab) => {
-    if (info.menuItemId === "filterComment") {
-      // Send message to content script to filter the selected comment
-      chrome.tabs.sendMessage(tab.id, {
-        action: "filterSelection",
-        selection: info.selectionText,
-      })
-    }
-  })
-  
-  // Listen for messages from content script
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "updateFilteredCount") {
-      // Update badge with number of filtered comments
-      chrome.action.setBadgeText({
-        text: request.count.toString(),
-        tabId: sender.tab?.id,
-      })
-  
-      chrome.action.setBadgeBackgroundColor({
-        color: "#0f2e5c",
-        tabId: sender.tab?.id,
-      })
-    }
-  })
-  
-  // Reset filtered count at midnight
-  function resetFilteredCount() {
-    const now = new Date()
-    const midnight = new Date(now)
-    midnight.setHours(24, 0, 0, 0)
-  
-    const timeUntilMidnight = midnight.getTime() - now.getTime()
-  
-    setTimeout(() => {
-      chrome.storage.sync.set({ filteredCount: 0 })
-      // Set up the next day's reset
-      resetFilteredCount()
-    }, timeUntilMidnight)
-  }
-  
-  // Start the reset cycle
-  resetFilteredCount()
-  */
-// Bubbl Extension - Background Script
-// Handles extension-wide functionality and communication
-
+/*need this
+// AI Shield - Content Script
+// This script runs in the background and manages the extension's core functionality
 // Track statistics
 let stats = {
   totalFiltered: 0,
@@ -250,11 +184,15 @@ chrome.runtime.onInstalled.addListener((details) => {
   }
 })
 
+*/
+
+
+
 
 // Bubbl Extension - Background Script
 // Handles extension-wide functionality and communication
 
-/*// Track statistics
+// Track statistics
 let stats = {
   totalFiltered: 0,
   todayFiltered: 0,
@@ -267,26 +205,48 @@ let stats = {
   lastReset: new Date().toDateString(),
 }
 
+// Throttle storage writes to avoid quota errors
+let pendingWrites = {}
+let writeTimeout = null
+const WRITE_DELAY = 2000 // Delay between batched writes
+
+function throttledStorageWrite(data) {
+  // Merge the new data with any pending writes
+  pendingWrites = { ...pendingWrites, ...data }
+
+  // Clear existing timeout if there is one
+  if (writeTimeout) {
+    clearTimeout(writeTimeout)
+  }
+
+  // Set a new timeout to perform the write
+  writeTimeout = setTimeout(() => {
+    // Only write if we have data
+    if (Object.keys(pendingWrites).length > 0) {
+      chrome.storage.sync.set(pendingWrites, () => {
+        if (chrome.runtime.lastError) {
+          console.error("[Bubbl] Storage write error:", chrome.runtime.lastError)
+        } else {
+          console.log("[Bubbl] Storage updated with:", pendingWrites)
+        }
+        pendingWrites = {} // Clear pending writes
+      })
+    }
+  }, WRITE_DELAY)
+}
+
 // Initialize extension
 chrome.runtime.onInstalled.addListener(() => {
   console.log("[Bubbl] Extension installed/updated")
 
-  // Set default settings
-  chrome.storage.sync.set({
-    shieldActive: true,
-    filterSettings: {
-      hateSpeech: true,
-      harassment: true,
-      profanity: true,
-      sensitivity: 70,
-    },
-    filteredCount: 0,
-    totalFiltered: 0,
-    sitesProtected: 0,
-  })
+  // Load existing stats first, then set defaults only for missing values
+  chrome.storage.sync.get(["stats", "totalFiltered", "filteredCount", "sitesProtected"], (data) => {
+    // Preserve existing total if available
+    const existingTotal = data.totalFiltered || 0
+    const existingFiltered = data.filteredCount || 0
+    const existingSites = data.sitesProtected || 0
 
-  // Load existing stats if available
-  chrome.storage.sync.get(["stats"], (data) => {
+    // Load existing stats if available
     if (data.stats) {
       stats = data.stats
 
@@ -295,9 +255,27 @@ chrome.runtime.onInstalled.addListener(() => {
       if (stats.lastReset !== today) {
         stats.todayFiltered = 0
         stats.lastReset = today
-        saveStats()
       }
+    } else {
+      // Initialize stats with existing totals
+      stats.totalFiltered = existingTotal
     }
+
+    // Set default settings without overwriting existing stats
+    throttledStorageWrite({
+      shieldActive: true,
+      filterSettings: {
+        hateSpeech: true,
+        harassment: true,
+        profanity: true,
+        sensitivity: 7,
+      },
+      // Preserve existing statistics
+      filteredCount: existingFiltered,
+      totalFiltered: existingTotal,
+      sitesProtected: existingSites,
+      stats: stats,
+    })
   })
 
   // Create context menu
@@ -308,9 +286,9 @@ chrome.runtime.onInstalled.addListener(() => {
   })
 })
 
-// Save stats to storage
+// Save stats to storage (throttled)
 function saveStats() {
-  chrome.storage.sync.set({
+  throttledStorageWrite({
     stats: stats,
     totalFiltered: stats.totalFiltered,
     sitesProtected: stats.sitesProtected.size,
@@ -327,12 +305,28 @@ function scheduleStatsReset() {
   const timeUntilMidnight = tomorrow.getTime() - now.getTime()
 
   setTimeout(() => {
-    stats.todayFiltered = 0
-    stats.lastReset = new Date().toDateString()
-    saveStats()
+    // Get current stats before resetting
+    chrome.storage.sync.get(["stats", "totalFiltered"], (data) => {
+      // Preserve the total count
+      const preservedTotal = data.totalFiltered || 0
 
-    // Schedule next reset
-    scheduleStatsReset()
+      // Reset only the daily count
+      stats.todayFiltered = 0
+      stats.lastReset = new Date().toDateString()
+
+      // Make sure we don't lose the total
+      stats.totalFiltered = preservedTotal
+
+      // Save updated stats
+      throttledStorageWrite({
+        filteredCount: 0,
+        totalFiltered: preservedTotal,
+        stats: stats,
+      })
+
+      // Schedule next reset
+      scheduleStatsReset()
+    })
   }, timeUntilMidnight)
 }
 
@@ -369,6 +363,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     // Update today's count
     stats.todayFiltered = count
+
+    // Throttled write to avoid quota issues
+    throttledStorageWrite({ filteredCount: count })
     saveStats()
   }
 
@@ -395,6 +392,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     saveStats()
   }
+
+  // Handle content viewed events
+  else if (message.action === "contentViewed") {
+    console.log("[Bubbl] User viewed filtered content:", message.categories)
+  }
+
+  // Handle toggle shield action
+  else if (message.action === "toggleShield") {
+    console.log("[Bubbl] Shield toggled:", message.status ? "enabled" : "disabled")
+
+    // Broadcast to all tabs
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        chrome.tabs
+          .sendMessage(tab.id, {
+            action: "toggleShield",
+            status: message.status,
+          })
+          .catch(() => {
+            // Ignore errors for tabs that don't have the content script
+          })
+      })
+    })
+  }
 })
 
 // Set up alarm for periodic tasks
@@ -416,4 +437,3 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }
 })
 
-*/

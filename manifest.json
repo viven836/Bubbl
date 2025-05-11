@@ -3,7 +3,7 @@
   "name": "Bubbl",
   "version": "1.0",
   "description": "Shield yourself from toxic comments and hate speech",
-  "permissions": ["storage", "contextMenus", "activeTab", "alarms"],
+  "permissions": ["storage", "contextMenus", "activeTab", "alarms", "tabs"],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
