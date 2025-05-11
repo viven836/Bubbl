@@ -1,0 +1,55 @@
+# 💡 Ignore Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 💻 Ignore virtual environments
+venv/
+env/
+ENV/
+.venv/
+.ENV/
+
+# 🐍 Ignore pipenv/poetry files (if you're using them)
+Pipfile.lock
+poetry.lock
+
+# 🔐 Ignore environment variables and secrets
+.env
+.env.*
+
+# 🗂 Ignore OS files
+.DS_Store
+Thumbs.db
+
+# ⚙️ VS Code settings
+.vscode/
+
+# 💾 Ignore log and temp files
+*.log
+*.tmp
+
+# 📦 Ignore built distributions
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# 🧪 Ignore testing artifacts
+htmlcov/
+.tox/
+.nox/
+.coverage
+coverage.xml
+.cache
+.pytest_cache/
+
+# 🔍 PyCharm & JetBrains IDEs
+.idea/
+
+# 💀 Ignore SQLite database if it's local-only
+*.sqlite3
+
+# 🌍 If you're using Flask or Django with static/media
+staticfiles/
+media/
