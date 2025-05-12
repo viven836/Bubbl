@@ -1,5 +1,6 @@
-#Bubbl# - >Your safe space on scroll
+
 💬 Bubbl — Hate Speech Filter Extension
+
 Bubbl is a lightweight browser extension that helps reduce hate speech online by filtering harmful and toxic content from tweets, comments, and captions. It works in real-time using simple but powerful regex-based detection.
 
 🎯 Built with love for SDG 5 – Gender Equality
