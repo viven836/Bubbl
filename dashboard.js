@@ -69,6 +69,9 @@ document.addEventListener("DOMContentLoaded", () => {
 */
 
 
+
+
+
 document.addEventListener("DOMContentLoaded", () => {
   // Elements
   const shieldToggle = document.getElementById("shield-toggle")
@@ -124,12 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // Update UI
         todayCountElement.textContent = todayFiltered
         totalCountElement.textContent = Math.round(safePercentage) + "%"
-        sitesCountElement.textContent = totalFiltered
+        sitesCountElement.textContent = sitesProtected//totalFiltered
 
         console.log("[Bubbl Dashboard] Statistics updated:", {
           todayFiltered,
           safePercentage: Math.round(safePercentage) + "%",
-          totalFiltered,
+          //totalFiltered,
           sitesProtected,
         })
       },
@@ -141,20 +144,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const newStatus = this.checked
     chrome.storage.sync.set({ shieldActive: newStatus }, () => {
       console.log("Shield is " + (newStatus ? "enabled" : "disabled"))
-      chrome.runtime.sendMessage({ action: "toggleShield", status: newStatus })
 
-      // Force refresh all tabs to apply the change immediately
-      chrome.tabs.query({}, (tabs) => {
-        tabs.forEach((tab) => {
-          chrome.tabs
-            .sendMessage(tab.id, {
-              action: "forceRescan",
-            })
-            .catch((error) => {
-              console.warn("Failed to send message to tab:", tab.id, error)
-              // Ignore errors for tabs that don't have the content script
-            })
-        })
+      // Send message to background script instead of directly to tabs
+      chrome.runtime.sendMessage({
+        action: "toggleShield",
+        status: newStatus,
       })
     })
   })
@@ -182,19 +176,10 @@ document.addEventListener("DOMContentLoaded", () => {
       () => {
         console.log("Settings saved:", settings)
 
-        // Notify all tabs that settings have changed
-        chrome.tabs.query({}, (tabs) => {
-          tabs.forEach((tab) => {
-            chrome.tabs
-              .sendMessage(tab.id, {
-                action: "settingsUpdated",
-                settings: settings,
-              })
-              .catch((error) => {
-                console.warn("Failed to send message to tab:", tab.id, error)
-                // Ignore errors for tabs that don't have the content script
-              })
-          })
+        // Send message to background script instead of directly to tabs
+        chrome.runtime.sendMessage({
+          action: "settingsUpdated",
+          settings: settings,
         })
       },
     )

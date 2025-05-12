@@ -61,11 +61,17 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 */
 
+
 document.addEventListener("DOMContentLoaded", () => {
   // Get filtered count from storage
   chrome.storage.sync.get(["filteredCount", "shieldActive"], (data) => {
     const filteredCount = data.filteredCount || 0
     const isActive = data.shieldActive !== undefined ? data.shieldActive : true
+    // Set the initial state of the shield toggle
+    const shieldToggle = document.getElementById("shield-toggle")
+    if (shieldToggle) {
+      shieldToggle.checked = isNotActive
+    }
 
     // Update the filtered count in the popup
     const filteredCountElement = document.getElementById("filtered-count")

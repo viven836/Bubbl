@@ -189,6 +189,7 @@ chrome.runtime.onInstalled.addListener((details) => {
 
 
 
+
 // Bubbl Extension - Background Script
 // Handles extension-wide functionality and communication
 
@@ -337,29 +338,55 @@ scheduleStatsReset()
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === "reportHateSpeech" && info.selectionText) {
     // Send the selected text to the content script for analysis
-    chrome.tabs.sendMessage(tab.id, {
-      action: "analyzeSelection",
-      text: info.selectionText,
-    })
+    if (tab.id) {
+      chrome.tabs
+        .sendMessage(tab.id, {
+          action: "analyzeSelection",
+          text: info.selectionText,
+        })
+        .catch(() => {
+          console.log("[Bubbl] Could not send analyzeSelection message to tab")
+        })
+    }
   }
 })
 
-// Listen for messages from content script
+// Function to safely send messages to tabs
+function safelySendMessageToTab(tabId, message) {
+  // Only send to http/https tabs (not chrome:// or extension:// pages)
+  chrome.tabs
+    .get(tabId, (tab) => {
+      if (tab && tab.url && (tab.url.startsWith("http://") || tab.url.startsWith("https://"))) {
+        chrome.tabs.sendMessage(tabId, message).catch(() => {
+          // Silently ignore errors for tabs that don't have content script
+          console.log(`[Bubbl] Tab ${tabId} not ready for messages (normal for non-content tabs)`)
+        })
+      }
+    })
+    .catch(() => {
+      // Tab might not exist anymore
+      console.log(`[Bubbl] Tab ${tabId} does not exist or cannot be accessed`)
+    })
+}
+
+// Listen for messages from content script and dashboard
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Update badge when content is filtered
   if (message.action === "updateFilteredCount") {
     const count = message.count || 0
 
     // Update badge
-    chrome.action.setBadgeText({
-      text: count.toString(),
-      tabId: sender.tab?.id,
-    })
+    if (sender.tab?.id) {
+      chrome.action.setBadgeText({
+        text: count.toString(),
+        tabId: sender.tab.id,
+      })
 
-    chrome.action.setBadgeBackgroundColor({
-      color: "#0f2e5c",
-      tabId: sender.tab?.id,
-    })
+      chrome.action.setBadgeBackgroundColor({
+        color: "#0f2e5c",
+        tabId: sender.tab.id,
+      })
+    }
 
     // Update today's count
     stats.todayFiltered = count
@@ -398,23 +425,48 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("[Bubbl] User viewed filtered content:", message.categories)
   }
 
-  // Handle toggle shield action
+  // Handle toggle shield action from dashboard.js
   else if (message.action === "toggleShield") {
     console.log("[Bubbl] Shield toggled:", message.status ? "enabled" : "disabled")
 
-    // Broadcast to all tabs
+    // Update storage
+    chrome.storage.sync.set({ shieldActive: message.status })
+
+    // Broadcast to all tabs with error handling
     chrome.tabs.query({}, (tabs) => {
       tabs.forEach((tab) => {
-        chrome.tabs
-          .sendMessage(tab.id, {
-            action: "toggleShield",
-            status: message.status,
+        if (tab.id) {
+          safelySendMessageToTab(tab.id, {
+            action: message.status ? "enableShield" : "disableShield",
           })
-          .catch(() => {
-            // Ignore errors for tabs that don't have the content script
-          })
+        }
       })
     })
+
+    // Send response
+    sendResponse({ success: true })
+    return true // Keep the message channel open for the async response
+  }
+
+  // Handle settings updated action from dashboard.js
+  else if (message.action === "settingsUpdated") {
+    console.log("[Bubbl] Settings updated:", message.settings)
+
+    // Broadcast to all tabs with error handling
+    chrome.tabs.query({}, (tabs) => {
+      tabs.forEach((tab) => {
+        if (tab.id) {
+          safelySendMessageToTab(tab.id, {
+            action: "settingsUpdated",
+            settings: message.settings,
+          })
+        }
+      })
+    })
+
+    // Send response
+    sendResponse({ success: true })
+    return true // Keep the message channel open for the async response
   }
 })
 
@@ -426,14 +478,12 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     // Check if any tabs need rescanning
     chrome.tabs.query({ active: true }, (tabs) => {
       tabs.forEach((tab) => {
-        chrome.tabs.sendMessage(tab.id, { action: "checkStatus" }, (response) => {
-          // If we got a response but shield isn't working, force a rescan
-          if (response && response.isShieldEnabled) {
-            chrome.tabs.sendMessage(tab.id, { action: "forceRescan" })
-          }
-        })
+        if (tab.id) {
+          safelySendMessageToTab(tab.id, { action: "checkStatus" })
+        }
       })
     })
   }
 })
 
+console.log("[Bubbl] Background script initialized")
