@@ -5,7 +5,7 @@ Bubbl is a lightweight browser extension that helps reduce hate speech online by
 🎯 Built with love for SDG 5 – Gender Equality
 
 ## 🔧 How to Install (Manual / Unpacked Method)
-1. Download the ZIP of the Bubbl extension (or clone the GitHub repo if shared).
+1. Clone the GitHub repo and download the zip file.
 2. Unzip the folder to a known location on your device.
 3. Open Google Chrome and go to: chrome://extensions/
 4. Enable Developer Mode (toggle switch at the top right).
@@ -22,5 +22,4 @@ That's it! 🫧 The extension will now start working on supported websites.
 ## 🧪 Still in Progress...
 This is an early prototype. The next version will use an AI model for smarter and more context-aware filtering. Stay tuned!
 
-## 🙌 Made by Eesha
 If you liked Bubbl or have suggestions, drop a star ⭐ on GitHub or reach out!
