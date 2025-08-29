@@ -1,5 +1,4 @@
 
-
 // Bubbl Extension: Advanced toxic content filter
 // Improved implementation that works with strict CSP policies
 
